@@ -1,2 +1,6 @@
 venv
 test.py
+.gitignore
+.env
+.idea
+__pycache__
