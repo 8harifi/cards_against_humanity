@@ -1,22 +1,15 @@
 import hashlib
-import random
-import string
 import uuid
 
+from Exceptions import RoomAuthError
 from consts import pepper
 from db import (
     add_room,
-    get_room_salt,
     add_player,
-    room_find_all,
-    room_find_one
+    room_find_one,
+    player_find_one,
+    add_player_to_room
 )
-
-
-def generate_random_string(length):
-    characters = string.ascii_letters + string.digits
-    random_string = ''.join(random.choice(characters) for _ in range(length))
-    return random_string
 
 
 class Room:
@@ -25,40 +18,46 @@ class Room:
         self.room_name = room_name
         self.uuid = _uuid
         self.room_password = room_password
-
-    def authenticate(self) -> bool:
         room = room_find_one({'uuid': self.uuid})
         if not room:
-            return False
+            raise RoomAuthError("uuid not Found!")
         if hashlib.md5((pepper + room['salt'] + self.room_password).encode()).hexdigest() == room['password']:
             self._id = room['_id']
-            return True
         else:
-            return False
+            raise RoomAuthError("Wrong Password")
 
-    def create_room(self):
-        self._id = add_room(self.room_name, self.room_password, self.uuid)
+    # def create_room(self):
+    #     self._id = add_room(self.room_name, self.room_password, self.uuid)
 
 
 class Player:
-    def __init__(self, nickname: str, username: str, password: str):
+    def __init__(self, nickname: str, username: str, password: str, create_user: bool = False):
         self.nickname = nickname
         self.username = username
         self.password = password
-        self.uuid = str(uuid.uuid4())
-        self._id = add_player(nickname, username, password, self.uuid)
+        # self._id = add_player(nickname, username, password)
+        if create_user:
+            self._id = add_player(nickname, username, password)['_id']
+        else:
+            player = player_find_one({'username': self.username})
+            if not player:
+                raise RoomAuthError("Username not Found!")
+            if hashlib.md5((pepper + player['salt'] + self.password).encode()).hexdigest() == player['password']:
+                self._id = player['_id']
+            else:
+                raise RoomAuthError("Wrong Password")
 
-    def create_room(self, room: Room) -> dict:
+    def create_room(self, room_name: str, password: str) -> dict:
         """
 
-        :param room: room
-        :param player: player
+        :param room_name: name of the room
+        :param password: password of the room in plain text
         :return:
         """
-        # check if room name already exists
-        # add to db
-        # return {name, password, _id}
-        pass
+        _uuid = str(uuid.uuid4())
+        room_info = add_room(room_name, password, _uuid, self.username)
+        self.join_room(Room(room_name, _uuid, password))
+        return room_info
 
     def join_room(self, room: Room) -> dict:
         """
@@ -66,7 +65,4 @@ class Player:
         :param room:
         :return:
         """
-        # check if room name exists
-        # add player to db
-        #
-        pass
+        return add_player_to_room(self.username, room.uuid)
