@@ -10,6 +10,7 @@ from db import (
     player_find_one,
     add_player_to_room
 )
+from game_modes import GameModeBase
 
 
 class Room:
@@ -66,3 +67,6 @@ class Player:
         :return:
         """
         return add_player_to_room(self.username, room.uuid)
+
+    def start_new_game(self, game_mode: GameModeBase):
+        pass
