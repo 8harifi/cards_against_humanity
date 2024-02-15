@@ -10,7 +10,6 @@ from db import (
     player_find_one,
     add_player_to_room
 )
-from game_modes import GameModeBase
 
 
 class Room:
@@ -32,10 +31,12 @@ class Room:
 
 
 class Player:
-    def __init__(self, nickname: str, username: str, password: str, create_user: bool = False):
+    def __init__(self, nickname: str, username: str, password: str, callback: callable, create_user: bool = False):
         self.nickname = nickname
         self.username = username
         self.password = password
+        self.callback = callback
+        self.choice = None
         # self._id = add_player(nickname, username, password)
         if create_user:
             self._id = add_player(nickname, username, password)['_id']
@@ -47,6 +48,14 @@ class Player:
                 self._id = player['_id']
             else:
                 raise RoomAuthError("Wrong Password")
+
+    def finish_vote(self, vote: bool):
+        """
+
+        :param vote:
+        :return:
+        """
+        self.choice = vote
 
     def create_room(self, room_name: str, password: str) -> dict:
         """
@@ -68,5 +77,5 @@ class Player:
         """
         return add_player_to_room(self.username, room.uuid)
 
-    def start_new_game(self, game_mode: GameModeBase):
-        pass
+    # def start_new_game(self, game_mode: 'GameModeBase'):
+    #     pass

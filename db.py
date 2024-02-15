@@ -141,6 +141,8 @@ def add_player(nickname: str, username: str, password: str) -> dict:
     :param password:
     :return: _id of player (str)
     """
+    if list(db['player'].find({'username': username})):
+        raise ValueError("that username is already taken")
     salt = generate_salt(salt_length)
     q = {
         'nickname': nickname,
